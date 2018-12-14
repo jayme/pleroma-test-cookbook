@@ -1,0 +1,35 @@
+proxy_cache_path /tmp/pleroma-media-cache levels=1:2 keys_zone=pleroma_media_cache:10m max_size=10g
+                 inactive=720m use_temp_path=off;
+
+access_log /var/log/nginx/pleroma.access.log;
+error_log /var/log/nginx/pleroma.error.log;
+
+server {
+    server_name _;
+    listen         80;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_buffers 16 8k;
+    gzip_http_version 1.1;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/activity+json application/atom+xml;
+    client_max_body_size 16m;
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $http_host;
+
+        proxy_pass http://127.0.0.1:4000;
+
+        client_max_body_size 16m;
+    }
+
+    location /proxy {
+        proxy_cache pleroma_media_cache;
+        proxy_cache_lock on;
+        proxy_ignore_client_abort on;
+        proxy_pass http://127.0.0.1:4000;
+    }
+}
